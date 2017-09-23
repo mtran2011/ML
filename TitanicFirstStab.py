@@ -1,10 +1,12 @@
+import math
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
+from sklearn import svm
 from sklearn.model_selection import GridSearchCV, cross_val_score
 import matplotlib.pyplot as plt
-%matplotlib inline
+# %matplotlib inline
 
 def process_raw_df(df):        
     df_data = df.drop(['PassengerId', 'Age', 'Ticket', 'Cabin', 'Name'], axis=1)
@@ -31,7 +33,7 @@ df_Xtest, _ = process_raw_df(df_test)
 ##############################################################################################
 # Adaboost
 ##############################################################################################
-
+'''
 n_leafs = list(range(3,9))
 n_trees = []
 adb_clfs = [] 
@@ -39,7 +41,7 @@ for n_leaf in n_leafs:
     # for each n_leaf, find the best number of trees n_tree
     adb = AdaBoostClassifier(base_estimator = DecisionTreeClassifier(max_leaf_nodes = n_leaf))
     n_tree_grid = {'n_estimators': list(range(50,1050,50))}
-    gcv = GridSearchCV(adb, n_tree_grid, cv=5)
+    gcv = GridSearchCV(adb, param_grid=n_tree_grid, n_jobs=-1, cv=5)
     gcv.fit(df_Xtrain, se_Ytrain)
     # best_params_ is a dict like so {'n_estimators': 75} 
     n_trees.append(gcv.best_params_['n_estimators'])
@@ -64,16 +66,44 @@ plt.xlabel('Model parameters')
 plt.xticks(range(len(x_tickmarks)), x_tickmarks, rotation='vertical')
 plt.margins(0.2)
 plt.show()
-
+'''
 ##############################################################################################
 # SVM
 ##############################################################################################
+svm_param_grid = {'kernel': ['rbf', 'poly', 'sigmoid'],
+                  'C': np.logspace(-2, 0, num=8, base=round(math.exp(1), 2)),
+                  'gamma': np.logspace(-4, 4, num=8, base=round(math.exp(1), 2))}
+gcv = GridSearchCV(svm.SVC(), param_grid=svm_param_grid, cv=5)
+gcv.fit(df_Xtrain, se_Ytrain)
+best_svm = gcv.best_estimator_
 
-
-
-
-
-
-
-
-
+predictions = best_svm.predict(df_Xtest)
+df_submit = pd.DataFrame({'PassengerId': df_test['PassengerId'], 
+                          'Survived': predictions})
+df_submit.to_csv('submit_svm.csv', index=False)
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  

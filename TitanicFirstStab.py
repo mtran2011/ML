@@ -7,7 +7,7 @@ from sklearn import svm
 from sklearn.model_selection import GridSearchCV, cross_val_score, KFold
 import matplotlib.pyplot as plt
 import seaborn as sns
-# %matplotlib inline
+%matplotlib inline
 
 def process_raw_df(df):        
     df_data = df.drop(['PassengerId', 'Age', 'Ticket', 'Cabin', 'Name'], axis=1)
@@ -88,8 +88,9 @@ best_rf = gcv.best_estimator_
 ##############################################################################################
 # SVM
 ##############################################################################################
-svm_param_grid = {'kernel': ['rbf', 'poly', 'sigmoid'],
-                  'C': np.logspace(-2, 0.5, num=5, base=round(math.exp(1), 4))}
+svm_param_grid = {'kernel': ['rbf', 'sigmoid'],                  
+                  'C': np.logspace(-2, 0.5, num=5, base=round(math.exp(1), 4)),
+                  'gamma': np.logspace(-4, 4, num=8, base=round(math.exp(1), 4))}
 gcv = GridSearchCV(svm.SVC(cache_size=8192), param_grid=svm_param_grid, n_jobs=2, refit=True, cv=5)
 gcv.fit(df_Xtrain, se_Ytrain)
 best_svm = gcv.best_estimator_
@@ -106,7 +107,7 @@ base_testset_predictions = pd.DataFrame({model_name: np.zeros(df_Xtest.shape[0])
 
 # with base_clf fully fit on all train data, use each base_clf to predict on test data
 for base_clf, model_name in zip(base_clfs, base_model_names):
-    base_testset_predictions.loc[:, model_name] = base_clf.predict(df_Xtest).values
+    base_testset_predictions.loc[:, model_name] = base_clf.predict(df_Xtest)
 
     # Split the train data to 5 folds. For each fold being the validation_fold:
 # Fit the base model to the remaining data and predict on the validation_fold                                      
@@ -117,7 +118,7 @@ for train_indexes, valid_indexes in kf.split(df_Xtrain, se_Ytrain):
     
     for base_clf, model_name in zip(base_clfs, base_model_names):
         base_clf.fit(df_kfold_Xtrain, se_kfold_Ytrain)
-        base_kfold_predictions.loc[valid_indexes, model_name] = base_clf.predict(df_kfold_Xvalid).values
+        base_kfold_predictions.loc[valid_indexes, model_name] = base_clf.predict(df_kfold_Xvalid)
 
 # add base_kfold_predictions as features to df_Xtrain
 df_Xtrain = pd.concat([df_Xtrain, base_kfold_predictions], axis=1)
